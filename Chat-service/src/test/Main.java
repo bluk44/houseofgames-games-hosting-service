@@ -15,6 +15,6 @@ public class Main {
 		cl1.start();
 		ClientConsole cl2 = new ClientConsole("ssij jaja");
 		cl2.start();
-		
+		int chuj = 15;
 	}
 }
