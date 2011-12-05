@@ -13,42 +13,45 @@ public class ClientConsole extends Thread {
 	private Socket socket = null;
 	private InputStream is = null;
 	private OutputStream os = null;
-	private boolean go = true;
-	private String messageForServer = null;
+	private PrintWriter writer = null;
+	private BufferedReader reader = null;
+	
+	private boolean read = true;
 	private void initConnection() {
 		try {
 			socket = new Socket("localhost", 10000);
 			is = socket.getInputStream();
 			os = socket.getOutputStream();
+			writer = new PrintWriter(os);
+			reader = new BufferedReader(new InputStreamReader(is));
+			
 		} catch (UnknownHostException e) {
 			System.out.println("[Client]: " + e.toString());
 		} catch (IOException e) {
 			System.out.println("[Client]: " + e.toString());
 		}
 	}
-	public ClientConsole(String messageForServer ){
+	public ClientConsole(){
 		super();
-		this.messageForServer = messageForServer;
 	}
+	public void sendMessage(String message){
+		if(writer != null){
+			writer.println(message);
+			writer.flush();
+		}
+	}
+	
 	public void run(){
 		initConnection();
-		PrintWriter writer = new PrintWriter(os);
-		BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-		String message = null ;
-		while(go){
-			writer.println(messageForServer);
-			writer.flush();
+		while(read){
+			String message = null;
 			try {
 				message = reader.readLine();
 				System.out.println(message);
-				Thread.sleep(500);
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
+				System.out.println("[Client]: error reading line");
 				e.printStackTrace();
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+			} 
 		}
 	}
 }

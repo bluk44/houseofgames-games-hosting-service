@@ -19,4 +19,5 @@ public interface AbstractServer {
 	public void removeMessageRecievedEvent(MessageReceivedListener listener);
 	
 	final EventListenerList listenerList = null;
+	
 }

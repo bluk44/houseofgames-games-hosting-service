@@ -107,7 +107,9 @@ public class GameServer implements AbstractServer {
 			}
 		}
 	}
-	
+	public void sendToClient(String message, int clientID){
+		clients.get(clientID).sendToClient(message);
+	}
 	private static String IPADRESS = "localhost";
 	private static Integer PORTNUMBER = 666;
 	private ServerSocket server = null;

@@ -11,11 +11,20 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		ServerGUI server = new ServerGUI();
-		ClientConsole cl1 = new ClientConsole("spierdalaj");
+		ClientConsole cl1 = new ClientConsole();
 		cl1.start();
-		ClientConsole cl2 = new ClientConsole("ssij jaja");
-		cl2.start();
-		
+		try {
+			while(true){
+				Thread.sleep(500);
+				cl1.sendMessage("spierdalay");
+			}
+			
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+
 	}
 	
 }
