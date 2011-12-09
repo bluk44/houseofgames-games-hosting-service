@@ -13,7 +13,7 @@ import javax.swing.event.EventListenerList;
 import events.MessageReceivedEvent;
 import events.MessageReceivedListener;
 
-public class ClientThread extends Thread {
+public class ClientThread implements Runnable {
 
 	public ClientThread(Socket socket, int clientID) {
 		this.clientID = clientID;

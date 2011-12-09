@@ -13,7 +13,14 @@ import events.ClientDroppedListener;
 import events.MessageReceivedListener;
 
 public class GameServer implements AbstractServer {
-
+	public GameServer(int portNumber){
+		try {
+			server = new ServerSocket(portNumber);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 	@Override
 	public void start() {
 		if(server == null){
@@ -41,7 +48,7 @@ public class GameServer implements AbstractServer {
 								}
 								clients.add(newClientThread);
 								//WYSTARTOWAC WATEK
-								clients.get(clients.size()-1).start();
+								//clients.get(clients.size()-1).start();
 								
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
@@ -110,24 +117,24 @@ public class GameServer implements AbstractServer {
 	public void sendToClient(String message, int clientID){
 		clients.get(clientID).sendToClient(message);
 	}
-	private static String IPADRESS = "localhost";
-	private static Integer PORTNUMBER = 666;
+	
+	private Integer portNumber = null;
 	private ServerSocket server = null;
 	private Thread acceptingThread = null;
 	private boolean accept = true;
 	private ArrayList<ClientThread> clients = null;
 	private int clientCounter = 0;
 	private MessageReceivedListener messageListener = null;
-	private EventListenerList listenerList = new EventListenerList();
+	//private EventListenerList listenerList = new EventListenerList();
 	
 	@Override
 	public String getIPAdress() {
-		return IPADRESS;
+		return server.getInetAddress().toString();
 	}
 
 	@Override
 	public Integer getPortNumber() {
-		return PORTNUMBER;
+		return portNumber;
 	}
 
 }

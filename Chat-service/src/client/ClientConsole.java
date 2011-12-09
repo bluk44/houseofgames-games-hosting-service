@@ -15,7 +15,7 @@ public class ClientConsole extends Thread {
 	private OutputStream os = null;
 	private PrintWriter writer = null;
 	private BufferedReader reader = null;
-	
+
 	private boolean read = true;
 	private void initConnection() {
 		try {

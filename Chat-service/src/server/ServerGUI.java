@@ -162,7 +162,7 @@ public class ServerGUI extends javax.swing.JFrame {
 	}
 
 	private void initServer() {
-		server = new GameServer();
+	//	server = new GameServer();
 		server.addClientConnectedListener(new ClientConnectedListener() {
 
 			@Override
