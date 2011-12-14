@@ -114,6 +114,7 @@ public class GameServer implements AbstractServer {
 			}
 		}
 	}
+	
 	public void sendToClient(String message, int clientID){
 		clients.get(clientID).sendToClient(message);
 	}
