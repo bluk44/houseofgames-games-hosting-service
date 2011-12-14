@@ -8,7 +8,7 @@ import java.net.Socket;
 
 import events.MessageReceivedEvent;
 
-public class ClientHandler {
+public class ClientHandler implements Runnable{
 
 	private String name;
 	private Integer ID;
@@ -16,7 +16,6 @@ public class ClientHandler {
 	private Socket socket;
 	private BufferedReader reader;
 	private PrintWriter writer;
-	private ClientMessageReceiver messageReceiver;
 	
 	private boolean receiving = false;
 	
@@ -24,7 +23,7 @@ public class ClientHandler {
 		this.socket = socket;
 		reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 		writer = new PrintWriter(socket.getOutputStream());
-		messageReceiver = new ClientMessageReceiver(reader);
+		
 	}
 	
 	public String getName() {
@@ -39,11 +38,26 @@ public class ClientHandler {
 	public void setID(Integer iD) {
 		ID = iD;
 	}
-	public boolean getReceiving(){
-		return receiving;
+
+	public void startReceiving(){
+		receiving = true;
+		while(receiving){
+			try {
+				if(reader.ready()){
+					String message = reader.readLine();
+				}
+			} catch (IOException e) {
+				System.out.println("[Client"+"#"+ID+"]: input stream error");
+				e.printStackTrace();
+			}
+		}
 	}
-	void setReceiving(boolean receiving){
-		this.receiving = receiving;
+	
+	
+	@Override
+	public void run() {
+		startReceiving();
+		
 	}
 	
 }
