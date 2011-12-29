@@ -1,137 +1,131 @@
 package server;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
-import java.net.Socket;
-import java.util.ArrayList;
+import java.nio.ByteBuffer;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.util.Iterator;
+import java.util.Set;
 
-import javax.swing.event.EventListenerList;
+import org.apache.log4j.BasicConfigurator;
+import org.apache.log4j.Logger;
 
-import events.ClientConnectedEvent;
-import events.ClientConnectedListener;
-import events.ClientDroppedListener;
-import events.MessageReceivedListener;
+public class GameServer implements ServerInterface, Runnable {
 
-public class GameServer implements AbstractServer {
-	public GameServer(int portNumber) {
-		try {
-			server = new ServerSocket(portNumber);
-		} catch (IOException e) {
-			System.out.println("[GameServer] error creating ServerSocket");
-			e.printStackTrace();
-		}
+	private static int DEF_PORT = 10000;
+	private static int DEF_BSIZE = 1024;
+
+	private ServerSocketChannel serverChannel;
+	private ServerSocket serverSocket;
+	private SocketChannel client;
+	private ByteBuffer readBuffer;
+	private InetSocketAddress serverAddress;
+	private Selector selector;
+	private Logger logger = Logger.getLogger(GameServer.class);
+	{
+		BasicConfigurator.configure();
+	}
+
+	public GameServer() {
+		serverAddress = new InetSocketAddress(DEF_PORT);
+		logger.info("server port set to " + DEF_PORT);
+	}
+
+	public GameServer(int port) {
+		serverAddress = new InetSocketAddress(port);
+		logger.info("server port set to " + port);
 	}
 
 	@Override
-	public void start() {
-		if (server == null) {
-			System.out.println("server not started");
-		}
-		System.out.println("[GameServer] starting accepting thread");
-		acceptingThread = new Thread(new Runnable() {
+	public void start() throws IOException {
+		logger.info("starting server");
 
-			@Override
-			public void run() {
-				while (accept) {
-					try {
-						// CZEKANIE NA KLIENTA
-						Socket newClientSocket = server.accept();
-						if (clients == null) {
-							clients = new ArrayList<ClientHandler>();
-						}
-						// KLIENT POLACZONY
-						// ODPALIC ZDARZENIE
-						fireClientConnectedEvent(new ClientConnectedEvent(this,
-								clientCounter));
-						// STWORZYC WATEK
-						ClientHandler clientHandler = new ClientHandler(
-								newClientSocket);
-						clientHandler.setID(clientCounter++);
-						if (messageListener != null) {
-							clientHandler
-									.addMessageReceivedListener(messageListener);
-						}
-						clients.add(clientHandler);
-						// WYSTARTOWAC WATEK
-						(new Thread(clientHandler)).start();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
+		serverChannel = ServerSocketChannel.open();
+		logger.info("server channel opened");
+
+		serverSocket = serverChannel.socket();
+		serverSocket.bind(serverAddress);
+		logger.info("server socket bound");
+
+		serverChannel.configureBlocking(false);
+		selector = Selector.open();
+		serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+		while (true) {
+			selector.select();
+
+			Set readyKeys = selector.selectedKeys();
+			Iterator iterator = readyKeys.iterator();
+
+			while (iterator.hasNext()) {
+				SelectionKey key = (SelectionKey) iterator.next();
+				iterator.remove();
+				// checking type of key
+				if (key.isAcceptable()) {
+					// new client
+					ServerSocketChannel server = (ServerSocketChannel) key
+							.channel();
+					client = server.accept();
+					logger.info("accepted client");
+
+					client.configureBlocking(false);
+					SelectionKey skey = client.register(selector,
+							SelectionKey.OP_READ);
+					readBuffer = ByteBuffer.allocate(DEF_BSIZE);
+					skey.attach(readBuffer);
+
+				} else if (key.isReadable()) {
+					logger.info("a client is ready to read! chuuuuuuuj");
+
+					SocketChannel client = (SocketChannel) key.channel();
+					client.read(readBuffer);
+					readBuffer.flip();
+					String message = new String(readBuffer.array());
+					logger.info("message from client {" + message + "}");
 				}
 			}
-
-		});
-		acceptingThread.start();
-	}
-
-	@Override
-	public void stop() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void addClientConnectedListener(ClientConnectedListener listener) {
-		listenerList.add(ClientConnectedListener.class, listener);
-	}
-
-	@Override
-	public void removeClientConnectedListener(ClientConnectedListener listener) {
-		listenerList.remove(ClientConnectedListener.class, listener);
-
-	}
-
-	@Override
-	public void addClientDroppedListener(ClientDroppedListener listener) {
-		listenerList.add(ClientDroppedListener.class, listener);
-
-	}
-
-	@Override
-	public void removeClientDroppedListener(ClientDroppedListener listener) {
-		listenerList.remove(ClientDroppedListener.class, listener);
-
-	}
-
-	@Override
-	public void addMessageRecievedListener(MessageReceivedListener listener) {
-		messageListener = listener;
-	}
-
-	@Override
-	public void removeMessageRecievedEvent(MessageReceivedListener listener) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void fireClientConnectedEvent(ClientConnectedEvent evt) {
-		Object[] listeners = listenerList.getListenerList();
-		for (int i = 0; i < listeners.length; i += 2) {
-			if (ClientConnectedListener.class == listeners[i]) {
-				((ClientConnectedListener) listeners[i + 1])
-						.clientConnected(evt);
-			}
 		}
+
 	}
 
-	private Integer portNumber = null;
-	private ServerSocket server = null;
-	private Thread acceptingThread = null;
-	private boolean accept = true;
-	private ArrayList<ClientHandler> clients = null;
-	private int clientCounter = 0;
-	private MessageReceivedListener messageListener = null;
-	private EventListenerList listenerList = new EventListenerList();
+	@Override
+	public void stop() throws IOException {
+		if (client != null) {
+			client.close();
+			logger.info("client channel closed");
+		}
+		if (serverChannel != null) {
+			logger.info("closing server channel");
+			serverChannel.close();
+			logger.info("server channel closed");
+		}
+
+	}
 
 	@Override
 	public String getIPAdress() {
-		return server.getInetAddress().toString();
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 	@Override
 	public Integer getPortNumber() {
-		return portNumber;
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void run() {
+		try {
+			start();
+		} catch (IOException e) {
+			logger.error("exception in start", e);
+		}
+
 	}
 
 }
