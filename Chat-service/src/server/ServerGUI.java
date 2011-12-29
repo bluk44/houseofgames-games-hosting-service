@@ -38,12 +38,11 @@ public class ServerGUI extends javax.swing.JFrame {
 	private DefaultListModel clientListModel = null;
 	private JScrollPane jScrollPane1;
 	private JTextArea messageTextArea;
-	private JButton sendMessageButton;
 	private JList clientList;
 	private JScrollPane messageScrollPane;
 	private JButton stopButton;
 	private GameServer server = null;
-
+	private int portNumber = 10000;
 	/**
 	 * Auto-generated main method to display this JFrame
 	 */
@@ -93,43 +92,6 @@ public class ServerGUI extends javax.swing.JFrame {
 					}
 				});
 			}
-			{
-				sendMessageButton = new JButton();
-				sendMessageButton.setText("Send");
-				sendMessageButton.addMouseListener(new MouseAdapter() {
-					public void mouseClicked(MouseEvent evt) {
-						(new Thread(new Runnable(){
-							public void run(){
-								while(true){
-									try {
-										Thread.sleep(700);
-										server.sendToClient("hello", 0);
-									} catch (InterruptedException e) {
-										// TODO Auto-generated catch block
-										e.printStackTrace();
-									}
-									
-								}
-							}
-						})).start();
-						
-					}
-				});
-			}
-			thisLayout.setVerticalGroup(thisLayout.createSequentialGroup()
-				.addContainerGap()
-				.addGroup(thisLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
-				    .addComponent(sendMessageButton, GroupLayout.Alignment.BASELINE, GroupLayout.PREFERRED_SIZE, 23, GroupLayout.PREFERRED_SIZE)
-				    .addComponent(startButton, GroupLayout.Alignment.BASELINE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
-				    .addComponent(stopButton, GroupLayout.Alignment.BASELINE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE))
-				.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-				.addGroup(thisLayout.createParallelGroup()
-				    .addGroup(GroupLayout.Alignment.LEADING, thisLayout.createSequentialGroup()
-				        .addComponent(clientListScrollPane, GroupLayout.PREFERRED_SIZE, 0, GroupLayout.PREFERRED_SIZE)
-				        .addGap(0, 410, Short.MAX_VALUE))
-				    .addComponent(messageScrollPane, GroupLayout.Alignment.LEADING, 0, 410, Short.MAX_VALUE)
-				    .addComponent(jScrollPane1, GroupLayout.Alignment.LEADING, 0, 410, Short.MAX_VALUE))
-				.addContainerGap());
 			thisLayout.setHorizontalGroup(thisLayout.createSequentialGroup()
 				.addContainerGap()
 				.addGroup(thisLayout.createParallelGroup()
@@ -138,9 +100,7 @@ public class ServerGUI extends javax.swing.JFrame {
 				        .addComponent(startButton, GroupLayout.PREFERRED_SIZE, 105, GroupLayout.PREFERRED_SIZE)
 				        .addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 				        .addComponent(stopButton, GroupLayout.PREFERRED_SIZE, 107, GroupLayout.PREFERRED_SIZE)
-				        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
-				        .addComponent(sendMessageButton, GroupLayout.PREFERRED_SIZE, 87, GroupLayout.PREFERRED_SIZE)
-				        .addGap(258)))
+				        .addPreferredGap(LayoutStyle.ComponentPlacement.RELATED, 263, GroupLayout.PREFERRED_SIZE)))
 				.addPreferredGap(LayoutStyle.ComponentPlacement.UNRELATED)
 				.addGroup(thisLayout.createParallelGroup()
 				    .addGroup(thisLayout.createSequentialGroup()
@@ -150,6 +110,19 @@ public class ServerGUI extends javax.swing.JFrame {
 				        .addGap(129)
 				        .addComponent(clientListScrollPane, GroupLayout.PREFERRED_SIZE, 0, GroupLayout.PREFERRED_SIZE)
 				        .addGap(0, 35, Short.MAX_VALUE)))
+				.addContainerGap());
+			thisLayout.setVerticalGroup(thisLayout.createSequentialGroup()
+				.addContainerGap()
+				.addGroup(thisLayout.createParallelGroup(GroupLayout.Alignment.BASELINE)
+				    .addComponent(startButton, GroupLayout.Alignment.BASELINE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE)
+				    .addComponent(stopButton, GroupLayout.Alignment.BASELINE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE, GroupLayout.PREFERRED_SIZE))
+				.addPreferredGap(LayoutStyle.ComponentPlacement.RELATED)
+				.addGroup(thisLayout.createParallelGroup()
+				    .addGroup(GroupLayout.Alignment.LEADING, thisLayout.createSequentialGroup()
+				        .addComponent(clientListScrollPane, GroupLayout.PREFERRED_SIZE, 0, GroupLayout.PREFERRED_SIZE)
+				        .addGap(0, 410, Short.MAX_VALUE))
+				    .addComponent(messageScrollPane, GroupLayout.Alignment.LEADING, 0, 410, Short.MAX_VALUE)
+				    .addComponent(jScrollPane1, GroupLayout.Alignment.LEADING, 0, 410, Short.MAX_VALUE))
 				.addContainerGap());
 			pack();
 			this.setSize(783, 491);
@@ -162,7 +135,7 @@ public class ServerGUI extends javax.swing.JFrame {
 	}
 
 	private void initServer() {
-	//	server = new GameServer();
+		server = new GameServer(portNumber);
 		server.addClientConnectedListener(new ClientConnectedListener() {
 
 			@Override
@@ -175,8 +148,8 @@ public class ServerGUI extends javax.swing.JFrame {
 			@Override
 			public void MessageRecieved(MessageReceivedEvent evt) {
 				System.out.println("received");
-				ClientThread source = (ClientThread) evt.getSource();
-				messageTextArea.append("[CLIENT#" + source.getClientID()
+				ClientHandler source = (ClientHandler) evt.getSource();
+				messageTextArea.append("[CLIENT#" + source.getName()
 						+ "] --> [Server]: " + evt.getText() + "\n");
 				
 			}

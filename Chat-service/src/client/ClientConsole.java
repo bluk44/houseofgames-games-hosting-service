@@ -1,108 +1,82 @@
 package client;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
 
-public class ClientConsole {
-	private int portNumber;
-	private String IPAdress = null;
-	private String name = null;
-	private Socket socket = null;
-	private PrintWriter writer = null;
-	private BufferedReader reader = null;
-	public Thread listeningThread = null;
-	private boolean listen = true;
-	private boolean connected = false;
-	private boolean listening = false;
+import protocol.ChatMessage;
 
-	public void initConnection() {
-		try {
-			socket = new Socket(IPAdress, portNumber);
-			writer = new PrintWriter(socket.getOutputStream());
-			reader = new BufferedReader(new InputStreamReader(
-					socket.getInputStream()));
-			connected = true;
-		} catch (UnknownHostException e) {
-			System.out.println("[Client]: " + e.toString());
-		} catch (IOException e) {
-			System.out.println("[Client]: " + e.toString());
+public class ClientConsole {
+	private String name = null;
+	private Integer ID = null;
+	private ObjectOutputStream writer = null;
+	private Thread messageReceiver = null;
+	private Socket connection = null;
+
+	private class ReceivingTask implements Runnable {
+		private ObjectInputStream reader = null;
+
+		public ReceivingTask(ObjectInputStream reader) {
+			this.reader = reader;
 		}
-	}
-	
-	public void closeConnection(){
-		if(connected){
-			if(listening){
-				stopReceiving();
-				listening = false;
-				try {
-					socket.close();
-				} catch (IOException e) {
-					System.out.println("[Client] "+ e);
-					e.printStackTrace();
+
+		@Override
+		public void run() {
+			try {
+				while (true) {
+					ChatMessage message = (ChatMessage) reader.readObject();
+					System.out.println(message);
 				}
+			} catch (ClassNotFoundException e) {
+				System.out.println("[Client] " + name + ": " + e);
+				e.printStackTrace();
+			} catch (IOException e) {
+				System.out.println("[Client] " + name + ": " + e);
+			} finally {
+				closeConnection();
 			}
+
 		}
+
 	}
-	
-	public ClientConsole(String name, String IPAdress, int portNumber) {
-		this.IPAdress = IPAdress;
-		this.portNumber = portNumber;
+
+	public ClientConsole(String name) {
 		this.name = name;
 	}
 
-	public void startReceiving() {
-		if (!connected) {
-			System.out.println("Client " + name + "not connected");
-			return;
-		}
-		listen = true;
-		listening = true;
-		listeningThread = new Thread(new Runnable() {
-			public void run() {
-				while (listen) {
-					try {
-						if (reader.ready()) {
-							String message = reader.readLine();
-							System.out.println(message);
-						}
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				}
+	public void initConnection(String IPAdress, int port)
+			throws UnknownHostException, IOException {
+		connection = new Socket(IPAdress, port);
+		System.out.println("[Client] connection established");
+		System.out.println(connection.getLocalPort());
+		writer = new ObjectOutputStream(connection.getOutputStream());
+		writer.flush();
+
+		ObjectInputStream reader = new ObjectInputStream(
+				connection.getInputStream());
+		messageReceiver = new Thread(new ReceivingTask(reader));
+
+		messageReceiver.start();
+	}
+
+	public void closeConnection() {
+		try {
+			if(connection !=null){
+				connection.close();
 			}
-		});
-		listeningThread.start();
-	}
-
-	public void stopReceiving() {
-		if (listening) {
-			listen = false;
-		}
-	}
-	
-	public void sendMessage(String message) {
-		if (!connected) {
-			System.out.println("client " + name + "disconnected");
-			return;
-		}
-		if (writer != null) {
-			writer.println(message);
-			writer.flush();
+		} catch (IOException e) {
+			System.out.println("[Client] " + name + ": " + e);
 		}
 	}
 
-	public boolean isConnected(){
-		return connected;
-	}
-	
-	public boolean isListening(){
-		return listening;
+	public void sendMessage(ChatMessage message) {
+		try {
+			writer.writeObject(message);
+		} catch (IOException e) {
+			System.out.println("[Client] " + name + ": " + e);
+			e.printStackTrace();
+		}
 	}
 }

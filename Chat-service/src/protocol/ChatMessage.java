@@ -1,6 +1,9 @@
 package protocol;
 
-public class ChatMessage {
+import java.io.Serializable;
+
+@SuppressWarnings("serial")
+public class ChatMessage implements Serializable{
 	public static enum Type {
 		HELLO,
 		OK,
@@ -8,7 +11,7 @@ public class ChatMessage {
 		NAME,
 		LIST,
 		ERR,
-		ID,
+		ID
 	}
 
 	private Type messageType;
@@ -18,12 +21,26 @@ public class ChatMessage {
 		this.messageType = type;
 		this.messageContent = messageContent;
 	}
-	
+	public ChatMessage(){
+		
+	}
 	public Type getType(){
 		return messageType;
 	}
-	
+	public void setType(ChatMessage.Type type){
+		this.messageType = type;
+	}
 	public String[] getContent(){
 		return messageContent;
+	}
+	public void setContent(String[] messageContent){
+		this.messageContent = messageContent;
+	}
+	public String toString(){
+	String message = "";
+	for(int i=0;i<messageContent.length;i++){
+		message += messageContent[i] + "\n";
+	}
+	return message;
 	}
 }
