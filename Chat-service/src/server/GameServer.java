@@ -17,45 +17,46 @@ import org.apache.log4j.Logger;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.group.ChannelGroup;
 import org.jboss.netty.channel.group.ChannelGroupFuture;
 import org.jboss.netty.channel.group.DefaultChannelGroup;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 
-
+import chat.Room;
 
 public class GameServer {
 	private static int DEFAULT_PORT = 10000;
 	private ChannelFactory channelFactory;
 	private ServerBootstrap serverBootstrap;
-	private ChannelGroup allChannels = new DefaultChannelGroup("all clients");
-
+	private Room chatRoom = new Room("BDSM");
+	public static final ChannelGroup allChannels = new DefaultChannelGroup("all clients");
+	{
+		BasicConfigurator.configure();
+	}
+	private Logger logger = Logger.getLogger(getClass());
 	public void start() {
 		channelFactory = new NioServerSocketChannelFactory(
 				Executors.newCachedThreadPool(),
 				Executors.newCachedThreadPool());
-		serverBootstrap = new ServerBootstrap(channelFactory);
-		serverBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-			public ChannelPipeline getPipeline() {
-				return Channels.pipeline(new ChatServerHandler(allChannels));
-			}
-		});
 
+		serverBootstrap = new ServerBootstrap(channelFactory);
+		serverBootstrap.setPipelineFactory(new GameServerPipelineFactory());
 		serverBootstrap.setOption("child.tcpNoDelay", true);
 		serverBootstrap.setOption("child.keepAlive", true);
 
 		Channel serverChannel = serverBootstrap.bind(new InetSocketAddress(
 				DEFAULT_PORT));
-		//allChannels.add(serverChannel);
+		logger.info("server started");
+		
+		// allChannels.add(serverChannel);
 	}
 
 	public void stop() {
+		logger.info("stopping server");
 		ChannelGroupFuture closeFuture = allChannels.close();
 		closeFuture.awaitUninterruptibly();
 		channelFactory.releaseExternalResources();
+		logger.info("server stopped");
 	}
-	
+
 }
